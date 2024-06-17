@@ -61,14 +61,28 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
 
     parser_filter = _asp('filter', help='filter out entries specified by regex')
     parser_filter.add_argument('regex', help='regex to specify the entry to be filtered out')
-    parser_filter.add_argument('--lazy', help='regex can match partially', action='store_true')
+
+    parser_filter.add_argument(
+        '--lazy', action='store_true',
+        help='regex does not need to be anchored at the beginning'
+    )
 
     parser_reorder = _asp('reorder', help='reorder entry by spec')
-    parser_reorder.add_argument('entry', help='the $PATH entry to be reordered')
-    parser_reorder.add_argument('pos', help=(
-        'position description where to move to, must follow the pattern: '
-        '{{before|after} ENTRY|(first|last)}'
-    ))
+    parser_reorder.add_argument(
+        'spec', help=(
+            'The reorder definition(s), seperated by ;. '
+            'Each definition consists of a regex (describing the path item) '
+            'and a command which describes the action. '
+            'Both are seperated through a :. '
+            'Allowed actions are '
+            '1=move entry to the first pos., $=move entry to the last pos, '
+            '<REGEX=move entry before the first item matching REGEX, '
+            '>REGEX=move entry behind the last item matching REGEX.'
+            'Examples: "/opt/bin/java:1" (move entry to the end); '
+            '"/opt/bin/java:<.*openjdk" '
+            '(move entry before the open jdk path entry)'
+        )
+    )
 
     args = vars(parser.parse_args())
     args = {k: '' if v is None else v for k, v in args.items()}
