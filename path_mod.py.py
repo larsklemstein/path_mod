@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
 """
-WHat's the blue light for?
+Perform sever $PATH modifications
 
-It light's blue...
 """
 
 # bugs and hints: lrsklemstein@gmail.com
@@ -13,7 +12,7 @@ import logging
 import logging.config
 import sys
 
-from typing import Any, Dict  # , List, Tuple, Callable
+from typing import Any, Dict, Callable  # , List, Tuple
 
 __log_level_default = logging.INFO
 
@@ -39,14 +38,6 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
 
     log_group = parser.add_mutually_exclusive_group()
 
-    parser.add_argument(
-        'FIX_ARG_EXAMPLE', help='FIX_ARG is for, well: please say it',
-    )
-
-#   parser.add_argument(
-#        '--optional_arg', help='an example for an optional arg',
-#   )
-
     log_group.add_argument(
         '--debug', action='store_true',
         help='enable debug log level',
@@ -57,10 +48,35 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
         help='optional logging cfg in ini format',
     )
 
+    subparsers = parser.add_subparsers(dest='subparser_name')
+    _asp = subparsers.add_parser
+
+    parser_unique = _asp('unique', help='delete redundant entries (keep order)')
+
+    parser_filter = _asp('filter', help='filter out entries specified by regex')
+    parser_filter.add_argument('regex', help='regex to specify the entry to be filtered out')
+
+    parser_filter = _asp('reorder', help='reorder entry by spec')
+    parser_filter.add_argument('entry', help='the $PATH entry to be reordered')
+    parser_filter.add_argument('pos', help=(
+        'position description where to move to, must follow the pattern: '
+        '{{before|after} ENTRY|(first|last)}'
+    ))
+
     args = vars(parser.parse_args())
     args = {k: '' if v is None else v for k, v in args.items()}
 
     return args
+
+
+def runner_unique(setup: Dict[str, any]) -> int:
+    print('unique')
+    return 0
+
+
+def runner_filter(setup: Dict[str, any]) -> int:
+    print('filter')
+    return 0
 
 
 def get_prog_doc() -> str:
