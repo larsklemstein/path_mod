@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Perform sever $PATH modifications
+Perform several $PATH modifications
 
 """
 
@@ -10,6 +10,7 @@ Perform sever $PATH modifications
 import argparse
 import logging
 import logging.config
+import os
 import sys
 
 from typing import Any, Dict, Callable  # , List, Tuple
@@ -36,6 +37,8 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
                 formatter_class=argparse.RawTextHelpFormatter,
             )
 
+    parser.add_argument('--path', help='the path to be modified (default: $PATH)')
+
     log_group = parser.add_mutually_exclusive_group()
 
     log_group.add_argument(
@@ -49,6 +52,8 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
     )
 
     subparsers = parser.add_subparsers(dest='subparser_name')
+    subparsers.required = True
+
     _asp = subparsers.add_parser
 
     parser_unique = _asp('unique', help='delete redundant entries (keep order)')
@@ -56,9 +61,9 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
     parser_filter = _asp('filter', help='filter out entries specified by regex')
     parser_filter.add_argument('regex', help='regex to specify the entry to be filtered out')
 
-    parser_filter = _asp('reorder', help='reorder entry by spec')
-    parser_filter.add_argument('entry', help='the $PATH entry to be reordered')
-    parser_filter.add_argument('pos', help=(
+    parser_reorder = _asp('reorder', help='reorder entry by spec')
+    parser_reorder.add_argument('entry', help='the $PATH entry to be reordered')
+    parser_reorder.add_argument('pos', help=(
         'position description where to move to, must follow the pattern: '
         '{{before|after} ENTRY|(first|last)}'
     ))
@@ -66,17 +71,10 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
     args = vars(parser.parse_args())
     args = {k: '' if v is None else v for k, v in args.items()}
 
+    if args['path'] == '':
+        args['path'] = os.environ['PATH']
+
     return args
-
-
-def runner_unique(setup: Dict[str, any]) -> int:
-    print('unique')
-    return 0
-
-
-def runner_filter(setup: Dict[str, any]) -> int:
-    print('filter')
-    return 0
 
 
 def get_prog_doc() -> str:
@@ -109,13 +107,40 @@ def init_logging(setup: Dict[str, Any]) -> None:
 def run(setup: Dict[str, Any]) -> int:
     logger = logging.getLogger(__name__)
 
-    #
-    # this is the entry point for what your program actually does...
-    #
+    cmd = setup['subparser_name']
+    logger.debug('run() got cmd "{cmd}"')
 
-    logger.info('Done something...')
+    if cmd == 'filter':
+        run_filter(setup)
+    elif cmd == 'unique':
+        run_unique(setup)
+    elif cmd == 'reorder':
+        run_reorder(setup)
+    else:
+        raise NotImplementedError(f'sub command "{cmd}"')
 
-    return 0
+    print(setup['path_changed'])
+
+
+def run_filter(setup):
+    logger = logging.getLogger(__name__)
+
+
+def run_unique(setup: Dict[str,any]):
+    logger = logging.getLogger(__name__)
+
+    path_items_before = setup['path'].split(':')
+    path_items_after = list()
+
+    for n, e in enumerate(path_items_before, start=1):
+        if not e in path_items_after:
+            path_items_after.append(e)
+
+    setup['path_changed'] = ':'.join(path_items_after)
+
+
+def run_reorder(setup):
+    logger = logging.getLogger(__name__)
 
 
 if __name__ == '__main__':
