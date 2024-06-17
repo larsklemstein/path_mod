@@ -11,9 +11,10 @@ import argparse
 import logging
 import logging.config
 import os
+import re
 import sys
 
-from typing import Any, Dict, Callable  # , List, Tuple
+from typing import Any, Dict, List
 
 __log_level_default = logging.INFO
 
@@ -60,6 +61,7 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
 
     parser_filter = _asp('filter', help='filter out entries specified by regex')
     parser_filter.add_argument('regex', help='regex to specify the entry to be filtered out')
+    parser_filter.add_argument('--lazy', help='regex can match partially', action='store_true')
 
     parser_reorder = _asp('reorder', help='reorder entry by spec')
     parser_reorder.add_argument('entry', help='the $PATH entry to be reordered')
@@ -108,38 +110,57 @@ def run(setup: Dict[str, Any]) -> int:
     logger = logging.getLogger(__name__)
 
     cmd = setup['subparser_name']
-    logger.debug('run() got cmd "{cmd}"')
+    logger.debug(f'run() got cmd "{cmd}"')
+
+    path_items = setup['path'].split(':')
+    path_items_new = list()
 
     if cmd == 'filter':
-        run_filter(setup)
+        run_filter(setup, path_items, path_items_new)
     elif cmd == 'unique':
-        run_unique(setup)
+        run_unique(setup, path_items, path_items_new)
     elif cmd == 'reorder':
-        run_reorder(setup)
+        run_reorder(setup, path_items, path_items_new)
     else:
         raise NotImplementedError(f'sub command "{cmd}"')
 
-    print(setup['path_changed'])
+    path_new = ':'.join(path_items_new)
+    print(path_new)
 
 
-def run_filter(setup):
+def run_filter(
+        setup: Dict[str,any],
+        path_items: List[str], path_items_new: List[str]):
     logger = logging.getLogger(__name__)
 
+    pattern = re.compile(setup['regex'])
 
-def run_unique(setup: Dict[str,any]):
+    filter = pattern.search if setup['lazy'] else pattern.match
+
+    for n, e in enumerate(path_items, start=1):
+        if not filter(e):
+            path_items_new.append(e)
+            logger.debug(f'+{e}')
+        else:
+            logger.debug(f'-{e}')
+
+
+def run_unique(
+        setup: Dict[str,any],
+        path_items: List[str], path_items_new: List[str]):
     logger = logging.getLogger(__name__)
 
-    path_items_before = setup['path'].split(':')
-    path_items_after = list()
-
-    for n, e in enumerate(path_items_before, start=1):
-        if not e in path_items_after:
-            path_items_after.append(e)
-
-    setup['path_changed'] = ':'.join(path_items_after)
+    for n, e in enumerate(path_items, start=1):
+        if not e in path_items_new:
+            path_items_new.append(e)
+            logger.debug(f'+{e}')
+        else:
+            logger.debug(f'-{e}')
 
 
-def run_reorder(setup):
+def run_reorder(
+        setup: Dict[str,any],
+        path_items: List[str], path_items_new: List[str]):
     logger = logging.getLogger(__name__)
 
 
