@@ -57,7 +57,7 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
 
     _asp = subparsers.add_parser
 
-    parser_unique = _asp('unique', help='delete redundant entries (keep order)')
+    parser_unify = _asp('unify', help='delete redundant entries (keep order)')
 
     parser_filter = _asp('filter', help='filter out entries specified by regex')
     parser_filter.add_argument('regex', help='regex to specify the entry to be filtered out')
@@ -105,7 +105,6 @@ def get_prog_doc() -> str:
 def init_logging(setup: Dict[str, Any]) -> None:
     """Creates either a logger by cfg file or a default instance
     with given log level by arg --log_level (otherwise irgnored)
-
     """
     if setup['log_cfg'] == '':
         if setup['debug']:
@@ -131,8 +130,8 @@ def run(setup: Dict[str, Any]) -> int:
 
     if cmd == 'filter':
         run_filter(setup, path_items, path_items_new)
-    elif cmd == 'unique':
-        run_unique(setup, path_items, path_items_new)
+    elif cmd == 'unify':
+        run_unify(setup, path_items, path_items_new)
     elif cmd == 'reorder':
         run_reorder(setup, path_items, path_items_new)
     else:
@@ -143,7 +142,7 @@ def run(setup: Dict[str, Any]) -> int:
 
 
 def run_filter(
-        setup: Dict[str,any],
+        setup: Dict[str, any],
         path_items: List[str], path_items_new: List[str]):
     logger = logging.getLogger(__name__)
 
@@ -159,8 +158,8 @@ def run_filter(
             logger.debug(f'-{e}')
 
 
-def run_unique(
-        setup: Dict[str,any],
+def run_unify(
+        setup: Dict[str, any],
         path_items: List[str], path_items_new: List[str]):
     logger = logging.getLogger(__name__)
 
@@ -173,7 +172,7 @@ def run_unique(
 
 
 def run_reorder(
-        setup: Dict[str,any],
+        setup: Dict[str, any],
         path_items: List[str], path_items_new: List[str]):
     logger = logging.getLogger(__name__)
 
