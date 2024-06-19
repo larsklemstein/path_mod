@@ -60,7 +60,12 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
     parser_unify = _asp('unify', help='delete redundant entries (keep order)')
 
     parser_filter = _asp('filter', help='filter out entries specified by regex')
-    parser_filter.add_argument('regex', help='regex to specify the entry to be filtered out')
+    parser_filter.add_argument('regex', help=(
+            'regex to specify the entry to be filtered out. '
+            ' It must match to the complete path entry '
+            '(when --lazy option is not used)'
+        )
+    )
 
     parser_filter.add_argument(
         '--lazy', action='store_true',
