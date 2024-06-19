@@ -14,7 +14,7 @@ import os
 import re
 import sys
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 __log_level_default = logging.INFO
 
@@ -87,6 +87,9 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
     args = vars(parser.parse_args())
     args = {k: '' if v is None else v for k, v in args.items()}
 
+    if not args['lazy'] and not args['regex'].endswith('$'):
+        args['regex'] += '$'
+
     if args['path'] == '':
         args['path'] = os.environ['PATH']
 
@@ -125,27 +128,23 @@ def run(setup: Dict[str, Any]) -> int:
     cmd = setup['subparser_name']
     logger.debug(f'run() got cmd "{cmd}"')
 
-    path_items = setup['path'].split(':')
-    path_items_new = list()
-
     if cmd == 'filter':
-        run_filter(setup, path_items, path_items_new)
+        path_items_new = run_filter(setup)
     elif cmd == 'unify':
-        run_unify(setup, path_items, path_items_new)
+        path_items_new = run_unify(setup)
     elif cmd == 'reorder':
-        run_reorder(setup, path_items, path_items_new)
+        path_items_new = run_reorder(setup)
     else:
         raise NotImplementedError(f'sub command "{cmd}"')
 
-    path_new = ':'.join(path_items_new)
-    print(path_new)
+    print(make_path_string(path_items_new))
+    return 0
 
 
-def run_filter(
-        setup: Dict[str, any],
-        path_items: List[str], path_items_new: List[str]):
+def run_filter(setup: Dict[str, any],) -> List[str]:
     logger = logging.getLogger(__name__)
 
+    path_items, path_items_new = get_path_items_old_and_emtpy_new(setup)
     pattern = re.compile(setup['regex'])
 
     filter = pattern.search if setup['lazy'] else pattern.match
@@ -157,11 +156,12 @@ def run_filter(
         else:
             logger.debug(f'-{e}')
 
+    return path_items_new
 
-def run_unify(
-        setup: Dict[str, any],
-        path_items: List[str], path_items_new: List[str]):
+
+def run_unify(setup: Dict[str, any]) -> List[str]:
     logger = logging.getLogger(__name__)
+    path_items, path_items_new = get_path_items_old_and_emtpy_new(setup)
 
     for n, e in enumerate(path_items, start=1):
         if not e in path_items_new:
@@ -170,11 +170,23 @@ def run_unify(
         else:
             logger.debug(f'-{e}')
 
+    return path_items_new
 
-def run_reorder(
-        setup: Dict[str, any],
-        path_items: List[str], path_items_new: List[str]):
+def run_reorder(setup: Dict[str, any]) -> List[str]:
     logger = logging.getLogger(__name__)
+    path_items, path_items_new = get_path_items_old_and_emtpy_new(setup)
+
+
+def get_path_items_old_and_emtpy_new(
+        setup: Dict[str,any]) -> Tuple[Tuple[str,], List[str,]]:
+    path_items = tuple(setup['path'].split(':'))
+    path_items_new = list()
+
+    return path_items, path_items_new
+
+
+def make_path_string(path_items: List[str,]) -> str:
+    return ':'.join(path_items)
 
 
 if __name__ == '__main__':
