@@ -16,7 +16,7 @@ import sys
 
 from typing import Any, Dict, List, Tuple
 
-__log_level_default = logging.INFO
+__LOG_LEVEL_DEFAULT = logging.INFO
 
 
 def main() -> None:
@@ -57,7 +57,7 @@ def get_prog_setup_or_exit_with_usage() -> Dict[str, Any]:
 
     _asp = subparsers.add_parser
 
-    parser_unify = _asp('unify', help='delete redundant entries (keep order)')
+    _ = _asp('unify', help='delete redundant entries (keep order)')
 
     parser_filter = _asp('filter', help='filter out entries specified by regex')
     parser_filter.add_argument('regex', help=(
@@ -106,8 +106,8 @@ def get_prog_doc() -> str:
 
     if doc_str is not None:
         return doc_str.strip()
-    else:
-        return '<???>'
+
+    return '<???>'
 
 
 def init_logging(setup: Dict[str, Any]) -> None:
@@ -117,12 +117,12 @@ def init_logging(setup: Dict[str, Any]) -> None:
     if setup['log_cfg'] == '':
         if setup['debug']:
             level = logging.DEBUG
-            format = '%(levelname)s - %(message)s'
+            lformat = '%(levelname)s - %(message)s'
         else:
-            level = __log_level_default
-            format = '%(message)s'
+            level = __LOG_LEVEL_DEFAULT
+            lformat = '%(message)s'
 
-        logging.basicConfig(level=level, format=format)
+        logging.basicConfig(level=level, format=lformat)
     else:
         logging.config.fileConfig(setup['log_cfg'])
 
@@ -131,7 +131,7 @@ def run(setup: Dict[str, Any]) -> int:
     logger = logging.getLogger(__name__)
 
     cmd = setup['subparser_name']
-    logger.debug(f'run() got cmd "{cmd}"')
+    logger.debug('run() got cmd "%s"', cmd)
 
     if cmd == 'filter':
         path_items_new = run_filter(setup)
@@ -152,14 +152,14 @@ def run_filter(setup: Dict[str, any],) -> List[str]:
     path_items, path_items_new = get_path_items_old_and_emtpy_new(setup)
     pattern = re.compile(setup['regex'])
 
-    filter = pattern.search if setup['lazy'] else pattern.match
+    filter_func = pattern.search if setup['lazy'] else pattern.match
 
-    for n, e in enumerate(path_items, start=1):
-        if not filter(e):
+    for e in path_items:
+        if not filter_func(e):
             path_items_new.append(e)
-            logger.debug(f'+{e}')
+            logger.debug('+%s', e)
         else:
-            logger.debug(f'-{e}')
+            logger.debug('-%s', e)
 
     return path_items_new
 
@@ -168,24 +168,27 @@ def run_unify(setup: Dict[str, any]) -> List[str]:
     logger = logging.getLogger(__name__)
     path_items, path_items_new = get_path_items_old_and_emtpy_new(setup)
 
-    for n, e in enumerate(path_items, start=1):
+    for e in path_items:
         if not e in path_items_new:
             path_items_new.append(e)
-            logger.debug(f'+{e}')
+            logger.debug('+%s', e)
         else:
-            logger.debug(f'-{e}')
+            logger.debug('-%s', e)
 
     return path_items_new
 
+
 def run_reorder(setup: Dict[str, any]) -> List[str]:
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
     path_items, path_items_new = get_path_items_old_and_emtpy_new(setup)
+
+    return path_items_new
 
 
 def get_path_items_old_and_emtpy_new(
         setup: Dict[str,any]) -> Tuple[Tuple[str,], List[str,]]:
     path_items = tuple(setup['path'].split(':'))
-    path_items_new = list()
+    path_items_new = []
 
     return path_items, path_items_new
 
